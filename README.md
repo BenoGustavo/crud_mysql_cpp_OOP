@@ -1,1 +1,2 @@
-# crud_mysql_cpp_OOP
+# crud_mysql_cpp
+Activity from Cesusc university
