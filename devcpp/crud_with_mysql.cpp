@@ -5,61 +5,75 @@
 #include <stdlib.h>
 #include <string>
 
-// Function to establish a database connection
-MYSQL* connectToDatabase(const char* host, const char* user, const char* pass, const char* db_name) {
-	MYSQL* conn = mysql_init(NULL);
-	
-	if (!mysql_real_connect(conn, host, user, pass, db_name, 0, NULL, 0)) {
-	    std::cout << "Failed to connect to the database: " << mysql_error(conn) << std::endl;
-	    return nullptr;
-	}
-		
-	return conn;
-}
-		
-// Function to disconnect from the database
-void disconnectFromDatabase(MYSQL* conn) {
-	if (conn != nullptr) {
-	    mysql_close(conn);
-	}
-}
-		
-// Function to execute a query and return the result set
-MYSQL_RES* executeQuery(MYSQL* conn, const char* query) {
-	if (mysql_query(conn, query)) {
-	    std::cout << "Query execution error: " << mysql_error(conn) << std::endl;
-	    return nullptr;
-	}
-		
-	return mysql_use_result(conn);
-}
-		
-// Function to free the result set
-void freeResultSet(MYSQL_RES* res) {
-	if (res != nullptr) {
-	    mysql_free_result(res);
-	}
-}	
 
+class DatabaseConnection {
+private:
+    MYSQL* conn;
 
+public:
+    // Constructor
+    DatabaseConnection(const char* host, const char* user, const char* pass, const char* db_name) {
+        conn = mysql_init(NULL);
+        if (!mysql_real_connect(conn, host, user, pass, db_name, 0, NULL, 0)) {
+            std::cout << "Failed to connect to the database: " << mysql_error(conn) << std::endl;
+            conn = nullptr; // Set the connection to nullptr to indicate a failure
+        }
+    }
+
+    // Destructor
+    ~DatabaseConnection() {
+        if (conn != nullptr) {
+            mysql_close(conn);
+        }
+    }
+
+    // Function to execute a query and return the result set
+    MYSQL_RES* executeQuery(const char* query) {
+        if (conn == nullptr) {
+            std::cout << "No database connection available." << std::endl;
+            return nullptr;
+        }
+
+        if (mysql_query(conn, query)) {
+            std::cout << "Query execution error: " << mysql_error(conn) << std::endl;
+            return nullptr;
+        }
+
+        return mysql_use_result(conn);
+    }
+
+    // Function to free the result set
+    void freeResultSet(MYSQL_RES* res) {
+        if (res != nullptr) {
+            mysql_free_result(res);
+        }
+    }
+    
+    MYSQL* getConnection() const {
+        return conn;
+    }
+    
+};
 
 class People{
 	protected:
 		
+		/*
 		int id_endereco,id_people;
 		//people variables
 		char CPF[14], nome[256], email[256],telefone[15],caracterisca[256];
 		
 		//adress variables
 		char logradouro[256], cep[10], numero[15], bairro[256];
+		*/
 		
 	public:	
 		
 		//Creating a dynamic function...
-		void create(MYSQL* conn, const char* tabela_nome, const char* coluna1, const char* coluna2, const char* coluna3, const char* coluna4, const char* coluna5, 
+		void create(DatabaseConnection& dbConnection, const char* tabela_nome, const char* coluna1, const char* coluna2, const char* coluna3, const char* coluna4, const char* coluna5, 
 		const char* CPF, const char* nome, const char* email, const char* telefone, const char* caracterisca, const char* logradouro,const char* cep, const char* numero, const char* bairro){
 			
-			MYSQL_STMT* stmt = mysql_stmt_init(conn);
+			MYSQL_STMT* stmt = mysql_stmt_init(dbConnection.getConnection());
     
 		    //Creating Endereco
 		    
@@ -94,7 +108,7 @@ class People{
 		
 		    //Creating...
 			
-			stmt = mysql_stmt_init(conn);
+			stmt = mysql_stmt_init(dbConnection.getConnection());
 			
 			//Transforming the C type string in to c++ type of string to concatenate...
 			std::string insert_query = "INSERT INTO " + std::string(tabela_nome) + "(" + std::string(coluna1) + "," + std::string(coluna2) + "," + std::string(coluna3) + "," + std::string(coluna4) + "," + std::string(coluna5) + ", id_endereco) VALUES (? , ?, ?, ?, ?, ?)";
@@ -141,12 +155,12 @@ class People{
     
 		}
 		
-		void read_all(MYSQL* conn, const char* table,const char* caracterisca){
-		    char query[100];
+		void read_all(DatabaseConnection& dbConnection, const char* table,const char* caracterisca){ 
+			char query[100];
 		    
 		    snprintf(query, sizeof(query), "SELECT * from %s as f, endereco as e WHERE e.id_endereco = f.id_endereco",table);
 		
-		    MYSQL_RES* res = executeQuery(conn, query);
+		    MYSQL_RES* res = dbConnection.executeQuery(query);
 		    
 		    if (res != nullptr) {
 		        MYSQL_ROW row;
@@ -156,14 +170,15 @@ class People{
 		            std::cout << "\nID: " << row[0] << ", CPF: " << row[1] << ", Nome: " << row[2] << ", Email: " << row[3] << ", Telefone: " << row[4] << ", " << std::string(caracterisca) << ": " << row[5] << "\n\nAdress info:\nID Endereco: " << row[7] << ", Lougradouro: " << row[8] << ", Cep: " << row[9] << ", Numero residencial: " << row[10] << ", Bairro: " << row[11] << std::endl;
 				}
 			}
+			dbConnection.freeResultSet(res);
 		}
 		
-		void read_all_id(MYSQL* conn, const char* table){
+		void read_all_id(DatabaseConnection& dbConnection, const char* table){
 		    char query[100];
 		    
 		    snprintf(query, sizeof(query), "SELECT id_%s FROM %s",table,table);
 		
-		    MYSQL_RES* res = executeQuery(conn, query);
+		    MYSQL_RES* res = dbConnection.executeQuery(query);
 		    
 		    if (res != nullptr) {
 		        MYSQL_ROW row;
@@ -181,13 +196,15 @@ class People{
 		            
 				}
 			}
+			
+			dbConnection.freeResultSet(res);
 		}
 		
-		void read_(MYSQL* conn, const char* tabela_nome , const char* caracterisca, int id){
+		void read_(DatabaseConnection& dbConnection, const char* tabela_nome , const char* caracterisca, int id){
 		    char query[100];
 		    snprintf(query, sizeof(query), "SELECT * from %s WHERE id_%s = %d", tabela_nome, tabela_nome, id);
 		
-		    MYSQL_RES* res = executeQuery(conn, query);
+		    MYSQL_RES* res = dbConnection.executeQuery(query);
 		    
 		    if (res != nullptr) {
 		        MYSQL_ROW row;
@@ -198,10 +215,10 @@ class People{
 		        	
 		            std::cout << "ID: " << row[0] << ", CPF: " << row[1] << ", Nome: " << row[2] << ", Email: " << row[3] << ", Telefone: " << row[4] << ", " << caracterisca << ": " << row[5] << std::endl;
 		            
-		            freeResultSet(res);
+		            dbConnection.freeResultSet(res);
 		            
 		            snprintf(query, sizeof(query), "SELECT * FROM endereco WHERE id_endereco = %s", row[6]);
-		        	MYSQL_RES* res = executeQuery(conn, query);
+		        	MYSQL_RES* res = dbConnection.executeQuery(query);
 		        	
 				    if (res != nullptr) {
 				        MYSQL_ROW adress_info;
@@ -213,7 +230,7 @@ class People{
 				            std::cout << "Logradouro: " << adress_info[1] << ", CEP: " << adress_info[2] << ", Numero: " << adress_info[3] << ", Bairro: " << adress_info[4] << std::endl;
 				        }
 				
-				        freeResultSet(res);
+				        dbConnection.freeResultSet(res);
 				    }
 		        
 				}
@@ -221,15 +238,15 @@ class People{
 		    }
 		}
 		
-		void update_(MYSQL* conn, const char* tabela_nome, const char* coluna1,int id, const char* CPF, const char* nome, const char* email, const char* telefone, const char* logradouro, const char* caracterisca, const char* cep, const char* numero, const char* bairro){
-			MYSQL_STMT* stmt = mysql_stmt_init(conn);
+		void update_(DatabaseConnection& dbConnection, const char* tabela_nome, const char* coluna1,int id, const char* CPF, const char* nome, const char* email, const char* telefone, const char* logradouro, const char* caracterisca, const char* cep, const char* numero, const char* bairro){
+			MYSQL_STMT* stmt = mysql_stmt_init(dbConnection.getConnection());
 			
 			//Selecting adress id
 		    
 		    char query[100];
 		    snprintf(query, sizeof(query), "SELECT * FROM %s WHERE id_%s = %d",tabela_nome ,tabela_nome , id);
 		
-		    MYSQL_RES* res = executeQuery(conn, query);
+		    MYSQL_RES* res = dbConnection.executeQuery(query);
 			
 		    MYSQL_ROW row;
 		    row = mysql_fetch_row(res);
@@ -304,13 +321,13 @@ class People{
 			
 		}
 		
-		void delete_(MYSQL* conn,const char* tabela_nome ,int id){
+		void delete_(DatabaseConnection& dbConnection,const char* tabela_nome ,int id){
 			char query[100];
 		    
 		    //Getting adress ID
 		    snprintf(query, sizeof(query), "SELECT * FROM %s WHERE id_%s = %d",tabela_nome,tabela_nome,id);
 		
-		    MYSQL_RES* res = executeQuery(conn, query);
+		    MYSQL_RES* res = dbConnection.executeQuery(query);
 		    
 		    MYSQL_ROW row;
 		    row = mysql_fetch_row(res);
@@ -318,21 +335,21 @@ class People{
 		    int id_address = atoi(row[6]);
 		    
 		    // Free the result set before executing additional queries
-		    mysql_free_result(res);
+		    dbConnection.freeResultSet(res);
 		    
 		    //Del funcionario
 		    snprintf(query, sizeof(query), "DELETE FROM %s WHERE id_%s = %i",tabela_nome,tabela_nome,id);
 		
-		    executeQuery(conn, query);
+		    res = dbConnection.executeQuery(query);
 		    
 			//Del adress
 			snprintf(query, sizeof(query), "DELETE FROM endereco WHERE id_endereco = %i", id_address);
 			
-			executeQuery(conn, query);  
+		    res = dbConnection.executeQuery(query); 
 		}
 };
 
-
+/*
 class Funcionario : public People{		
 	public:	
 		
@@ -349,37 +366,33 @@ class Paciente : public People{
 	public:	
 		
 };
-
-
+*/
 
 int main() {
-	//Colocando tipos de caracter para UTF-8
-	setlocale(LC_ALL,"portuguese");
-	
+    // Colocando tipos de caracter para UTF-8
+    setlocale(LC_ALL, "portuguese");
+
     const char* HOST = "localhost";
     const char* USER = "root";
     const char* PASS = "root";
     const char* DB_NAME = "hospital_v2";
 
-    MYSQL* conn = connectToDatabase(HOST, USER, PASS, DB_NAME);
-    if (conn == nullptr) {
-        return 1;
-    }
+    DatabaseConnection dbConnection(HOST, USER, PASS, DB_NAME);
 	
 	//Criando instancia do funcionario
-	Funcionario instancia_funcionario;
+	People instancia_funcionario;
 	
 	
 	/////////////////////
 	//Testando metodos//
 	///////////////////
 	
-	//instancia_funcionario.create(conn,"funcionario","CPF","nome","email","telefone","funcao","123.123.123-45","Gustavo Leandro Gorges","gustavo.gorges@faculdadecesusc.edu.br","4832695585","Desenvolvedor Junior","Rua evaristo guilherme dos santos","14785-569","130","Vargem de fora");
-	//instancia_funcionario.read_all(conn,"funcionario","funcao");
-	//instancia_funcionario.read_all_id(conn,"funcionario");
-	//instancia_funcionario.read_(conn,"funcionario","funcao",40);
-	//instancia_funcionario.update_(conn,"funcionario","funcao",40,"657.657.657-78","new name","newemail@gmail.com","4899999999","newlogradouro","Engenheiro de software","45673-677","122","Ingleses do rio vermelho");
-	//instancia_funcionario.delete_(conn,"funcionario",40);
+	//instancia_funcionario.create(dbConnection,"funcionario","CPF","nome","email","telefone","funcao","123.123.123-45","Gustavo Leandro Gorges","gustavo.gorges@faculdadecesusc.edu.br","4832695585","Desenvolvedor Junior","Rua evaristo guilherme dos santos","14785-569","130","Vargem de fora");
+	//instancia_funcionario.read_all(dbConnection,"funcionario","funcao");
+	//instancia_funcionario.read_all_id(dbConnection,"funcionario");
+	//instancia_funcionario.read_(dbConnection,"funcionario","funcao",40);
+	//instancia_funcionario.update_(dbConnection,"funcionario","funcao",40,"657.657.657-78","new name","newemail@gmail.com","4899999999","newlogradouro","Engenheiro de software","45673-677","122","Ingleses do rio vermelho");
+	//instancia_funcionario.delete_(dbConnection,"funcionario",42);
 	
 	return 0;
 }
