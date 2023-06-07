@@ -394,5 +394,248 @@ int main() {
 	//instancia_funcionario.update_(dbConnection,"funcionario","funcao",40,"657.657.657-78","new name","newemail@gmail.com","4899999999","newlogradouro","Engenheiro de software","45673-677","122","Ingleses do rio vermelho");
 	//instancia_funcionario.delete_(dbConnection,"funcionario",42);
 	
+	std::string cpf_create,nome_create,email_create,telefone_create,logradouro_endereco,funcao_create,cep_endereco,numero_endereco,bairro_endereco;
+	int ids,ids_create,id_hospital; 
+	
+	char menu,start;
+	
+	start:
+	
+	//Starting the main menu
+	do{
+		system("cls");
+		
+		printf("Hospital - Menu\nInsert the desired table:\n\n");
+		printf("1 - Funcionario\n2 - Medico\n3 - Hospital\n4 - Paciente\n5 - Clinica\n6 - Doencas\n7 - Prontuario\n\nType 8 to exit.");
+		menu = getche();
+	}while(menu > '8' || menu < '1');
+	
+	switch (menu){
+		
+		//funcionario
+		case '1':{
+				do{
+					system("cls");
+					printf("Funcionario - Menu\nWhat do you want to do?:\n");
+					printf("1 - Create\n2 - Read\n3 - Update\n4 - Delete\n\nType 5 to return.");
+					menu = getche();
+					
+					switch(menu){
+						
+						//Create
+						case '1':{
+							system("cls");
+							
+							std::cout << "Personal INFO:" << std::endl;
+							std::cout << "Insert the CPF: " << std::endl;
+							std::getline(std::cin, cpf_create);
+							
+							std::cout << "Insert the nome: " << std::endl;
+							std::getline(std::cin, nome_create);
+							
+							std::cout << "Insert the email: " << std::endl;
+							std::getline(std::cin, email_create);
+							
+							std::cout << "insert the telefone: " << std::endl;
+							std::getline(std::cin, telefone_create);
+							
+							std::cout << "insert the cargo: " << std::endl;
+							std::getline(std::cin, funcao_create);
+							
+							std::cout << "\nAdress INFO:\n" << std::endl;
+							
+							std::cout << "insert the logradouro: " << std::endl;
+							std::getline(std::cin, logradouro_endereco);
+							
+							std::cout << "insert the CEP: " << std::endl;
+							std::getline(std::cin, cep_endereco);
+							
+							std::cout << "insert the numero residencial: " << std::endl;
+							std::getline(std::cin, numero_endereco);
+							
+							std::cout << "insert the bairro: " << std::endl;
+							std::getline(std::cin, bairro_endereco);
+							
+							//I needed to tranform all the string values to char values...
+							instancia_funcionario.create(dbConnection,"funcionario","CPF","nome","email","telefone","funcao",cpf_create.c_str(),nome_create.c_str(),email_create.c_str(),telefone_create.c_str(),logradouro_endereco.c_str(),funcao_create.c_str(),cep_endereco.c_str(),numero_endereco.c_str(),bairro_endereco.c_str());
+							
+							goto start;
+							break;
+						}
+						
+						//Read
+						case '2':{
+							do{
+							system("cls");
+							printf("Funcionario - Read\nWhat do you want to do?:\n\n");
+							printf("1 - Read all\n2 - Read by ID\n\nType 3 to return.");
+							menu = getche();
+							
+							}while(menu > '3' || menu < '1');
+							
+							switch(menu){
+								//READ ALL
+								case '1':{
+									printf("\n\nALL DATAS FROM FUNCIONARIO:\n\n");
+									instancia_funcionario.read_all(dbConnection,"funcionario","funcao");
+									printf("\n");
+									
+									system("pause");
+									goto start;
+									break;
+								}
+								
+								//READ BY ID
+								case '2':{
+									system("cls");
+									std::cout << "0 to leave." << std::endl;
+										
+									instancia_funcionario.read_all_id(dbConnection,"funcionario");
+									
+									do{	
+										printf("\n-=-=-=-=*-*-=-=-=-=\n");
+										std::cout << "\ninsert the id: " << std::endl;
+										std::cin >> ids;
+										
+										instancia_funcionario.read_(dbConnection,"funcionario","funcao",ids);
+									
+									}while(ids != 0);
+									
+									goto start;
+									break;
+								}
+								
+								//Return
+								case '3':{
+									goto start;
+									break;
+								}
+							}
+							
+							break;
+						}
+						
+						//Update
+						case '3':{
+							system("cls");
+							
+							std::cout << "Personal INFO:" << std::endl;
+							
+							instancia_funcionario.read_all_id(dbConnection,"funcionario");
+							
+							printf("\n");
+							
+							std::cout << "Insert the ID: " << std::endl;
+							std::cin >> ids_create;
+							
+							std::cin.ignore();  // Discard the remaining newline character
+							
+							std::cout << "Insert the CPF: " << std::endl;
+							std::getline(std::cin, cpf_create);
+							
+							std::cout << "Insert the nome: " << std::endl;
+							std::getline(std::cin, nome_create);
+							
+							std::cout << "Insert the email: " << std::endl;
+							std::getline(std::cin, email_create);
+							
+							std::cout << "insert the telefone: " << std::endl;
+							std::getline(std::cin, telefone_create);
+							
+							std::cout << "insert the cargo: " << std::endl;
+							std::getline(std::cin, funcao_create);
+							
+							std::cout << "\nAdress INFO:\n" << std::endl;
+							
+							std::cout << "insert the logradouro: " << std::endl;
+							std::getline(std::cin, logradouro_endereco);
+							
+							std::cout << "insert the CEP: " << std::endl;
+							std::getline(std::cin, cep_endereco);
+							
+							std::cout << "insert the numero residencial: " << std::endl;
+							std::getline(std::cin, numero_endereco);
+							
+							std::cout << "insert the bairro: " << std::endl;
+							std::getline(std::cin, bairro_endereco);
+							
+							//I needed to tranform all the string values to char values...
+							instancia_funcionario.update_(dbConnection,"funcionario","funcao",ids_create,cpf_create.c_str(),nome_create.c_str(),email_create.c_str(),telefone_create.c_str(),logradouro_endereco.c_str(),funcao_create.c_str(),cep_endereco.c_str(),numero_endereco.c_str(),bairro_endereco.c_str());
+							
+							goto start;
+							break;
+						}
+						
+						//Delete
+						case '4':{
+							system("cls");
+							printf("0 to return\n");
+							instancia_funcionario.read_all_id(dbConnection,"funcionario");
+							
+							std::cout << "\nInsert the ID: " << std::endl;
+							std::cin >> ids_create;
+							
+							if(ids_create == 0){
+								goto start;
+							}
+							
+							instancia_funcionario.delete_(dbConnection,"funcionario",ids_create);
+							
+							goto start;
+							break;
+						}
+						
+						//return
+						case '5':{
+							goto start;
+							break;
+						}
+					}
+					
+					break;
+				}while(menu > '5' || menu < '1');
+			}
+		
+		//Medico
+		case '2':{
+			goto start;
+			break;
+		}
+		
+		//Hospital
+		case '3':{
+			goto start;
+			break;
+		}
+		//Paciente
+		case '4':{
+			goto start;
+			break;
+		}
+		//Clinica
+		case '5':{
+			goto start;
+			break;
+		}
+		//Doencas
+		case '6':{
+			goto start;
+			break;
+		}
+		//Prontuario
+		case '7':{
+			goto start;
+			break;
+		}
+		//exit
+		case '8':{
+			printf("\n\n\nExiting...");
+			break;
+		}
+		
+	}
+	
+	dbConnection.~DatabaseConnection();
+	
 	return 0;
 }
